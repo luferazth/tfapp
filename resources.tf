@@ -1,3 +1,5 @@
+# We need to provide with the necessary cloud provider
+# to get access to the API's we're going to invoke
 provider "aws" {
   access_key = XXXX
   secret_key = XXXX
@@ -5,19 +7,34 @@ provider "aws" {
 }
 
 
+## we need to get data and metadata about the type of image we're going to need
+##
+
+
 data "aws_ssm_parameter" "ami"{
     name = "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
 }
 
+# As for this moment we're going into the Virtual Private Cloud service in AWS
+# we have a lot of choices here
+# for example:
+# we chose to have a private IPv4 address to assign to the VPC
+# with dns_hostnames which allows to assign a dns name to "any" resources created in the VPC
+#
 resource "aws_vpc" "vpc" {
     cidr_block           = "10.0.0.0/16"
     enable_dns_hostnames = "true"
 }
 
+#After this we're going to attach an internet gateway to the VPC to allow
+# internet connections to our resources
+# A nice thing to notice is that: after the VPC is created we're gonna reference its id as variable
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.vpc.id
 }
 
+# After the VPC is created, we're going to create a simple architecture, VPC with a single public subnet
+# one EC2 Instance and a security group to allow access on port 80 since we're hosting a NGINX web server
 resource "aws_subnet" "subnet1" {
   cidr_block              = "10.0.0.0/24"
   vpc_id                  = aws_vpc.vpc.id
